@@ -1,25 +1,10 @@
-#dubinPathPlanning.py
-#import umath
-import math as umath
+# dubinsPathPlanning.py
+import umath
+#import math as umath
+from vehicleConstants import L_car, psi_max
 
-def check_angles(theta_arc, turn_type):
-    """
-    Ajusta el ángulo para que sea válido según el tipo de giro ('L' o 'R').
 
-    Args:
-        theta_arc: float - Ángulo inicial.
-        turn_type: str - Tipo de giro ('L' para izquierda, 'R' para derecha).
-
-    Returns:
-        float: Ángulo ajustado.
-    """
-    if theta_arc < 0 and turn_type == 'L':
-        theta_arc += 2 * umath.pi
-    elif theta_arc > 0 and turn_type == 'R':
-        theta_arc -= 2 * umath.pi
-    return theta_arc
-
-def get_tangents(x1, y1, r1, x2, y2, r2, path_type):
+def get_tangents(c1, c2, r_turn_min, path_type):
     """
     Calcula las tangentes entre dos círculos dados y selecciona una según el tipo.
 
@@ -31,11 +16,16 @@ def get_tangents(x1, y1, r1, x2, y2, r2, path_type):
     Returns:
         list: Tangente seleccionada según el tipo [x1, y1, x2, y2]. Vacío si no hay solución.
     """
+    x1 = c1[0]
+    x2 = c2[0]
+    y1 = c1[1]
+    y2 = c2[1]
+    
     # Distancia cuadrada entre los centros
     d_sq = (x1 - x2) ** 2 + (y1 - y2) ** 2
-
+    
     # Comprobación de existencia de tangentes válidas
-    if d_sq <= (r1 - r2) ** 2:
+    if d_sq <= (r_turn_min - r_turn_min) ** 2:
         print("No existen tangentes válidas entre los círculos.")
         return []
 
@@ -45,13 +35,13 @@ def get_tangents(x1, y1, r1, x2, y2, r2, path_type):
     # Vector unitario entre los centros
     vx = (x2 - x1) / d
     vy = (y2 - y1) / d
-
+    
     # Inicialización de resultados
     tangents = []
     
     # Cálculo de las tangentes
     for sign1 in [+1, -1]:
-        c = (r1 - sign1 * r2) / d
+        c = (r_turn_min - sign1 * r_turn_min) / d
 
         # Verificar si es válido
         if c ** 2 > 1:
@@ -67,10 +57,10 @@ def get_tangents(x1, y1, r1, x2, y2, r2, path_type):
 
             # Puntos de tangencia
             tangents.append([
-                x1 + r1 * nx,  # x1 tangente
-                y1 + r1 * ny,  # y1 tangente
-                x2 + sign1 * r2 * nx,  # x2 tangente
-                y2 + sign1 * r2 * ny   # y2 tangente
+                x1 + r_turn_min * nx,  # x1 tangente
+                y1 + r_turn_min * ny,  # y1 tangente
+                x2 + sign1 * r_turn_min * nx,  # x2 tangente
+                y2 + sign1 * r_turn_min * ny   # y2 tangente
             ])
 
     # Verificar que el tipo sea válido
@@ -85,6 +75,15 @@ def get_tangents(x1, y1, r1, x2, y2, r2, path_type):
         return []
 
     return tangents[index]
+
+def check_angles(theta_arc, turn_type):
+    
+    if (theta_arc < 0.0 and turn_type == 'L'):
+        theta_arc += 2.0 * umath.pi
+    elif (theta_arc > 0.0 and turn_type == 'R'):
+        theta_arc -= 2.0 * umath.pi
+       
+    return theta_arc
 
 def dubin_LRL(s, g, r_turn_min):
     """
@@ -162,138 +161,8 @@ def dubin_LRL(s, g, r_turn_min):
 
     return L, path_type
 
-def dubin_LSL(s, g, r_turn_min):
-    """
-    Calcula las longitudes de una trayectoria Dubins del tipo LSL.
-
-    Args:
-        s: List[float] - Punto inicial [x, y, theta]
-        g: List[float] - Punto final [x, y, theta]
-        r_turn_min: float - Radio mínimo de giro
-
-    Returns:
-        Tuple[List[float], str]: Longitudes de los segmentos y tipo de trayectoria
-    """
-    path_type = 'LSL'
-    L = [-1, -1, -1]
-
-    # Centros de los círculos C1 y C2
-    c1 = [
-        s[0] + r_turn_min * umath.cos(s[2] + umath.pi / 2),
-        s[1] + r_turn_min * umath.sin(s[2] + umath.pi / 2)
-    ]
-    c2 = [
-        g[0] + r_turn_min * umath.cos(g[2] + umath.pi / 2),
-        g[1] + r_turn_min * umath.sin(g[2] + umath.pi / 2)
-    ]
-
-    # Distancia entre los centros
-    dx = c2[0] - c1[0]
-    dy = c2[1] - c1[1]
-    D = umath.sqrt(dx**2 + dy**2)
-
-    # Verificar si es posible el camino LSL
-    if D < 2 * r_turn_min:
-        print("Advertencia: La trayectoria LSL no es válida para los puntos dados.")
-        return L, path_type
-
-    # Obtener las tangentes correspondientes
-    tangents = get_tangents(c1[0], c1[1], r_turn_min, c2[0], c2[1], r_turn_min, path_type)
-    if tangents is None:
-        print("Advertencia: No se encontraron tangentes válidas para el tipo LSL.")
-        return L, path_type
-
-    # Tramo 1: Arco inicial (izquierda)
-    theta1_start = umath.atan2(s[1] - c1[1], s[0] - c1[0])
-    theta1_end = umath.atan2(tangents[1] - c1[1], tangents[0] - c1[0])
-    theta1_arc = check_angles(theta1_end - theta1_start, 'L')
-    L[0] = r_turn_min * abs(theta1_arc)
-
-    # Tramo 2: Segmento recto
-    L[1] = umath.sqrt((tangents[2] - tangents[0])**2 + (tangents[3] - tangents[1])**2)
-
-    # Tramo 3: Arco final (izquierda)
-    theta2_start = umath.atan2(tangents[3] - c2[1], tangents[2] - c2[0])
-    theta2_end = umath.atan2(g[1] - c2[1], g[0] - c2[0])
-    theta2_arc = check_angles(theta2_end - theta2_start, 'L')
-    L[2] = r_turn_min * abs(theta2_arc)
-
-    return L, path_type
-
-def dubin_LSR(s, g, r_turn_min):
-    """
-    Calcula las longitudes de una trayectoria Dubins del tipo LSR.
-
-    Args:
-        s (tuple): Estado inicial (x, y, theta).
-        g (tuple): Estado final (x, y, theta).
-        r_turn_min (float): Radio mínimo de giro.
-
-    Returns:
-        tuple: (L, type), donde:
-            L (list): Longitudes de los tres segmentos (arco-recta-arco). Si no es válida, [-1, -1, -1].
-            type (str): Tipo de trayectoria ('LSR').
-    """
-    path_type = "LSR"
-    L = [0.0, 0.0, 0.0]
-
-    # Centros de los círculos C1 y C2
-    c1 = (
-        s[0] + r_turn_min * umath.cos(s[2] + umath.pi / 2),
-        s[1] + r_turn_min * umath.sin(s[2] + umath.pi / 2)
-    )
-    c2 = (
-        g[0] + r_turn_min * umath.cos(g[2] - umath.pi / 2),
-        g[1] + r_turn_min * umath.sin(g[2] - umath.pi / 2)
-    )
-
-    # Distancia entre los centros
-    D = umath.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
-
-    # Verificar si es posible el camino LSR
-    if D < 2 * r_turn_min:
-        print("La trayectoria LSR no es válida para los puntos dados.")
-        return ([-1, -1, -1], path_type)
-
-    # Obtener las tangentes correspondientes
-    tangents = get_tangents(c1[0], c1[1], r_turn_min, c2[0], c2[1], r_turn_min, path_type)
-    if not tangents:
-        print("No se encontraron tangentes válidas para el tipo LSR.")
-        return ([-1, -1, -1], path_type)
-
-    # Tramo 1: Arco inicial (izquierda)
-    theta1_start = umath.atan2(s[1] - c1[1], s[0] - c1[0])
-    theta1_end = umath.atan2(tangents[1] - c1[1], tangents[0] - c1[0])
-    theta1_arc = theta1_end - theta1_start
-    theta1_arc = check_angles(theta1_arc, 'L')  # Corregir el ángulo para arco izquierdo
-    L[0] = r_turn_min * abs(theta1_arc)
-
-    # Tramo 2: Segmento recto
-    L[1] = umath.sqrt((tangents[2] - tangents[0])**2 + (tangents[3] - tangents[1])**2)
-
-    # Tramo 3: Arco final (derecha)
-    theta2_start = umath.atan2(tangents[3] - c2[1], tangents[2] - c2[0])
-    theta2_end = umath.atan2(g[1] - c2[1], g[0] - c2[0])
-    theta2_arc = theta2_end - theta2_start
-    theta2_arc = check_angles(theta2_arc, 'R')  # Corregir el ángulo para arco derecho
-    L[2] = r_turn_min * abs(theta2_arc)
-
-    return (L, path_type)
-
 def dubin_RLR(s, g, r_turn_min):
-    """
-    Calcula las longitudes de una trayectoria Dubins del tipo RLR.
-
-    Args:
-        s (tuple): Estado inicial (x, y, theta).
-        g (tuple): Estado final (x, y, theta).
-        r_turn_min (float): Radio mínimo de giro.
-
-    Returns:
-        tuple: (L, type), donde:
-            L (list): Longitudes de los tres segmentos (arco-arco-arco). Si no es válida, [-1, -1, -1].
-            type (str): Tipo de trayectoria ('RLR').
-    """
+    
     path_type = "RLR"
     L = [0.0, 0.0, 0.0]
 
@@ -356,78 +225,104 @@ def dubin_RLR(s, g, r_turn_min):
 
     return (L, path_type)
 
-def dubin_RSL(s, g, r_turn_min):
-    """
-    Calcula las longitudes de una trayectoria Dubins del tipo RSL.
+def dubin_LSL(s, g, r_turn_min):
+    
+    path_type = 'LSL'
+    L = [-1, -1, -1]
 
-    Args:
-        s (tuple): Estado inicial (x, y, theta).
-        g (tuple): Estado final (x, y, theta).
-        r_turn_min (float): Radio mínimo de giro.
+    # Centros de los círculos C1 y C2
+    c1 = [
+        s[0] + r_turn_min * umath.cos(s[2] + umath.pi / 2),
+        s[1] + r_turn_min * umath.sin(s[2] + umath.pi / 2)
+    ]
+    c2 = [
+        g[0] + r_turn_min * umath.cos(g[2] + umath.pi / 2),
+        g[1] + r_turn_min * umath.sin(g[2] + umath.pi / 2)
+    ]
 
-    Returns:
-        tuple: (L, type), donde:
-            L (list): Longitudes de los tres segmentos (arco-recta-arco). Si no es válida, [-1, -1, -1].
-            type (str): Tipo de trayectoria ('RSL').
-    """
-    path_type = "RSL"
+    # Distancia entre los centros
+    D = umath.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
+
+    
+    # Verificar si es posible el camino LSL
+    if D < 2 * r_turn_min:
+        print("Advertencia: La trayectoria LSL no es válida para los puntos dados.")
+        return L, path_type
+
+    # Obtener las tangentes correspondientes
+    tangents = get_tangents(c1, c2, r_turn_min, path_type)
+    
+    if tangents is None:
+        print("Advertencia: No se encontraron tangentes válidas para el tipo LSL.")
+        return L, path_type
+    
+    # Tramo 1: Arco inicial (izquierda)
+    theta1_start = umath.atan2(s[1] - c1[1], s[0] - c1[0])
+    theta1_end = umath.atan2(tangents[1] - c1[1], tangents[0] - c1[0])
+    theta1_arc = check_angles(theta1_end - theta1_start, 'L')
+    L[0] = r_turn_min * abs(theta1_arc)
+    
+    # Tramo 2: Segmento recto
+    L[1] = umath.sqrt((tangents[2] - tangents[0])**2 + (tangents[3] - tangents[1])**2)
+    
+    # Tramo 3: Arco final (izquierda)
+    theta2_start = umath.atan2(tangents[3] - c2[1], tangents[2] - c2[0])
+    theta2_end = umath.atan2(g[1] - c2[1], g[0] - c2[0])
+    theta2_arc = check_angles(theta2_end - theta2_start, 'L')
+    L[2] = r_turn_min * abs(theta2_arc)
+    
+    return L, path_type
+
+def dubin_LSR(s, g, r_turn_min):
+    
+    path_type = "LSR"
     L = [0.0, 0.0, 0.0]
 
     # Centros de los círculos C1 y C2
     c1 = (
-        s[0] + r_turn_min * umath.cos(s[2] - umath.pi / 2),
-        s[1] + r_turn_min * umath.sin(s[2] - umath.pi / 2)
+        s[0] + r_turn_min * umath.cos(s[2] + umath.pi / 2),
+        s[1] + r_turn_min * umath.sin(s[2] + umath.pi / 2)
     )
     c2 = (
-        g[0] + r_turn_min * umath.cos(g[2] + umath.pi / 2),
-        g[1] + r_turn_min * umath.sin(g[2] + umath.pi / 2)
+        g[0] + r_turn_min * umath.cos(g[2] - umath.pi / 2),
+        g[1] + r_turn_min * umath.sin(g[2] - umath.pi / 2)
     )
 
     # Distancia entre los centros
     D = umath.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
 
-    # Verificar si es posible el camino RSL
+    # Verificar si es posible el camino LSR
     if D < 2 * r_turn_min:
-        print("La trayectoria RSL no es válida para los puntos dados.")
+        print("La trayectoria LSR no es válida para los puntos dados.")
         return ([-1, -1, -1], path_type)
 
     # Obtener las tangentes correspondientes
-    tangents = get_tangents(c1[0], c1[1], r_turn_min, c2[0], c2[1], r_turn_min, path_type)
+    tangents = get_tangents(c1, c2, r_turn_min, path_type)
     if not tangents:
-        print("No se encontraron tangentes válidas para el tipo RSL.")
-        return ([-1, -1, -1], path_type)
+        print("No se encontraron tangentes válidas para el tipo LSR.")
+        return [-1, -1, -1], path_type
 
-    # Tramo 1: Arco inicial (derecho)
+    # Tramo 1: Arco inicial (izquierda)
     theta1_start = umath.atan2(s[1] - c1[1], s[0] - c1[0])
     theta1_end = umath.atan2(tangents[1] - c1[1], tangents[0] - c1[0])
-    theta1_arc = check_angles(theta1_end - theta1_start, 'R')
+    theta1_arc = theta1_end - theta1_start
+    theta1_arc = check_angles(theta1_arc, 'L')  # Corregir el ángulo para arco izquierdo
     L[0] = r_turn_min * abs(theta1_arc)
 
     # Tramo 2: Segmento recto
     L[1] = umath.sqrt((tangents[2] - tangents[0])**2 + (tangents[3] - tangents[1])**2)
 
-    # Tramo 3: Arco final (izquierdo)
+    # Tramo 3: Arco final (derecha)
     theta2_start = umath.atan2(tangents[3] - c2[1], tangents[2] - c2[0])
     theta2_end = umath.atan2(g[1] - c2[1], g[0] - c2[0])
-    theta2_arc = check_angles(theta2_end - theta2_start, 'L')
+    theta2_arc = theta2_end - theta2_start
+    theta2_arc = check_angles(theta2_arc, 'R')  # Corregir el ángulo para arco derecho
     L[2] = r_turn_min * abs(theta2_arc)
 
-    return (L, path_type)
+    return L, path_type
 
 def dubin_RSR(s, g, r_turn_min):
-    """
-    Calcula las longitudes de una trayectoria Dubins del tipo RSR.
-
-    Args:
-        s (tuple): Estado inicial (x, y, theta).
-        g (tuple): Estado final (x, y, theta).
-        r_turn_min (float): Radio mínimo de giro.
-
-    Returns:
-        tuple: (L, type), donde:
-            L (list): Longitudes de los tres segmentos (arco-recta-arco). Si no es válida, [-1, -1, -1].
-            type (str): Tipo de trayectoria ('RSR').
-    """
+    
     path_type = "RSR"
     L = [0.0, 0.0, 0.0]
 
@@ -450,10 +345,10 @@ def dubin_RSR(s, g, r_turn_min):
         return ([-1, -1, -1], path_type)
 
     # Obtener las tangentes correspondientes
-    tangents = get_tangents(c1[0], c1[1], r_turn_min, c2[0], c2[1], r_turn_min, path_type)
+    tangents = get_tangents(c1, c2, r_turn_min, path_type)
     if not tangents:
         print("No se encontraron tangentes válidas para el tipo RSR.")
-        return ([-1, -1, -1], path_type)
+        return [-1, -1, -1], path_type
 
     # Tramo 1: Arco inicial (derecho)
     theta1_start = umath.atan2(s[1] - c1[1], s[0] - c1[0])
@@ -470,38 +365,105 @@ def dubin_RSR(s, g, r_turn_min):
     theta2_arc = check_angles(theta2_end - theta2_start, 'R')
     L[2] = r_turn_min * abs(theta2_arc)
 
-    return (L, path_type)
+    return L, path_type
 
-def dubin_calculation(s, g, r_turn_min):
+def dubin_RSL(s, g, r_turn_min):
+    
+    path_type = "RSL"
+    L = [0.0, 0.0, 0.0]
+
+    # Centros de los círculos C1 y C2
+    c1 = (
+        s[0] + r_turn_min * umath.cos(s[2] - umath.pi / 2),
+        s[1] + r_turn_min * umath.sin(s[2] - umath.pi / 2)
+    )
+    c2 = (
+        g[0] + r_turn_min * umath.cos(g[2] + umath.pi / 2),
+        g[1] + r_turn_min * umath.sin(g[2] + umath.pi / 2)
+    )
+
+    # Distancia entre los centros
+    D = umath.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
+
+    # Verificar si es posible el camino RSL
+    if D < 2 * r_turn_min:
+        print("La trayectoria RSL no es válida para los puntos dados.")
+        return [-1, -1, -1], path_type
+
+    # Obtener las tangentes correspondientes
+    tangents = get_tangents(c1, c2, r_turn_min, path_type)
+    if not tangents:
+        print("No se encontraron tangentes válidas para el tipo RSL.")
+        return [-1, -1, -1], path_type
+
+    # Tramo 1: Arco inicial (derecho)
+    theta1_start = umath.atan2(s[1] - c1[1], s[0] - c1[0])
+    theta1_end = umath.atan2(tangents[1] - c1[1], tangents[0] - c1[0])
+    theta1_arc = check_angles(theta1_end - theta1_start, 'R')
+    L[0] = r_turn_min * abs(theta1_arc)
+
+    # Tramo 2: Segmento recto
+    L[1] = umath.sqrt((tangents[2] - tangents[0])**2 + (tangents[3] - tangents[1])**2)
+
+    # Tramo 3: Arco final (izquierdo)
+    theta2_start = umath.atan2(tangents[3] - c2[1], tangents[2] - c2[0])
+    theta2_end = umath.atan2(g[1] - c2[1], g[0] - c2[0])
+    theta2_arc = check_angles(theta2_end - theta2_start, 'L')
+    L[2] = r_turn_min * abs(theta2_arc)
+
+    return L, path_type
+
+def dubin_calculation(s, g, r_turn_min, show_debug_info = False):
     # Parámetros iniciales
     #s  Postura inicial
     #g  Postura final
     #r_turn_min  Radio mínimo de giro en cm
     
-
+    
     # Inicialización de variables
     L = [[-1, -1, -1] for _ in range(6)]  # Longitudes iniciales
-    types = [''] * 6  # Tipos de trayectoria
-
+    path_types = [''] * 6  # Tipos de trayectoria
+    
     # Cálculo de trayectorias
-    L[0], types[0] = dubin_RSR(s, g, r_turn_min)
-    L[1], types[1] = dubin_LSL(s, g, r_turn_min)
-    L[2], types[2] = dubin_LSR(s, g, r_turn_min)
-    L[3], types[3] = dubin_RSL(s, g, r_turn_min)
-    L[4], types[4] = dubin_RLR(s, g, r_turn_min)
-    L[5], types[5] = dubin_LRL(s, g, r_turn_min)
+    L[0], path_types[0] = dubin_RSR(s, g, r_turn_min)
+    L[1], path_types[1] = dubin_LSL(s, g, r_turn_min)
+    L[2], path_types[2] = dubin_LSR(s, g, r_turn_min)
+    L[3], path_types[3] = dubin_RSL(s, g, r_turn_min)
+    L[4], path_types[4] = dubin_RLR(s, g, r_turn_min)
+    L[5], path_types[5] = dubin_LRL(s, g, r_turn_min)
 
-    # Selección de la mejor trayectoria
-    best_cost = float('inf')
-    L_selected = [float('inf'), float('inf'), float('inf')]
-    type_selected = ''
+    if show_debug_info:
+        for i in range(6):
+            print("Trayectoria {}:".format(i + 1))
+            print("  Longitudes: [{}] cm".format(", ".join("{:.2f}".format(length) for length in L[i])))
+            print("  Tipo: {}".format(path_types[i]))
+            print("-" * 40)
 
-    for i in range(6):
-        if all(val != -1 for val in L[i]):  # Verifica si la trayectoria es válida
-            cost = sum(L[i])  # Calcula el costo total
-            if cost < best_cost:
+
+    # Seleccionar la trayectoria más corta
+    # Inicializar las variables necesarias
+    best_cost = float('inf')  # Inicializamos el costo como infinito
+    L_selected = None
+    path_type_selected = None
+
+    # Asumiendo que L es una lista de listas y type es una lista de strings
+    for i in range(6):  # Iterar de 0 a 5 (Python es 0-indexado)
+        if all(value != -1 for value in L[i]):  # Verificamos que L[i] no tenga valores -1
+            cost = sum(L[i])  # Calculamos el costo total de la trayectoria
+            if cost < best_cost:  # Verificamos si es la mejor trayectoria hasta ahora
                 best_cost = cost
                 L_selected = L[i]
-                type_selected = types[i]
+                path_type_selected = path_types[i]  # Accedemos al tipo correspondiente
+    
+    return L_selected, path_type_selected
+        
+if __name__ == "__main__":
+    s = [0.0, 0.0, umath.radians(0)]  # Postura inicial
+    g = [120.0, 0.0, umath.radians(0)]  # Postura final
+    r_turn_min = L_car / umath.sin(umath.radians(psi_max))  # Radio mínimo de giro en cm
+    print(r_turn_min)
+    L, path = dubin_calculation(s, g, r_turn_min, True)
+    print("Longitudes de los segmentos:", L, "\nTipo de trayectoria:", path, "\nLongitud total:", sum(L))
+    print("Test de Dubin finalizado")
+    
 
-    return L_selected, type_selected

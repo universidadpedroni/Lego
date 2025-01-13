@@ -35,7 +35,7 @@ r_turn_min = L_car / sin(psi_max); %[cm] Mínimo radio de giro.
 
 %% Ejemplo de cálculo separando en funciones
 s = [0  0  0]; % Postura inicial
-g = [120 120 45]; % Postura final
+g = [-200 -10 180]; % Postura final
 
 h = 0.020; % [seg] Paso de integración para simular las trayectorias
 
