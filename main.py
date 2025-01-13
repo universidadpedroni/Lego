@@ -25,9 +25,9 @@ def generateThetaReference(theta, path_type, delta_s, r_turn_min):
     # Es importante notar que la referencia de posición es siempre la misma. delta_s. Se agrega delta_s a la posición actual. 
     # La referencia de orientación se actualiza en cada iteración.
     if path_type == 'R':
-        theta = theta - delta_s / r_turn_min
-    elif path_type == 'L':
         theta = theta + delta_s / r_turn_min
+    elif path_type == 'L':
+        theta = theta - delta_s / r_turn_min
     else:
         theta = theta
     return theta
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     #testEncoders()
     #testSteeringAndPositionControl(-45, 120, True, 1)
     s = [0.0, 0.0, umath.radians(0)]  # Postura inicial
-    g = [120.0, 120.0, umath.radians(45)]  # Postura final
+    g = [120.0, 120.0, umath.radians(0)]  # Postura final
     
     L, path_type = dubin_calculation(s, g, r_turn_min)
     # Cómputo de la duración estimada de la trayectoria en función de la velocidad del vehículo. Se agrega un 20%
