@@ -36,8 +36,9 @@ def generateThetaReference(theta, path_type, delta_s, r_turn_min):
 def controlDelVehiculo(L, path_type, estimated_driving_time, show_debug_info = False, h = 20, delta_error=1):
     # IMPORTANTE: h en MILISEGUNDOS
     # Inicializar las variables
-    resetAllSensors()
+    
     elapsed_time = 0
+    resetAllSensors()
     position_reference = 0.0
     steering_reference = 0.0
     max_driving_time = estimated_driving_time * 1.2 * 1000.0 # Tiempo máximo de conducción, en milisegundos
@@ -45,10 +46,15 @@ def controlDelVehiculo(L, path_type, estimated_driving_time, show_debug_info = F
 
     for i in range(len(L)):
         for _ in range(int(L[i] / delta_s)):
+            # Verificar que los motores no se han bloqueado
+            if (rear.stalled() or front.stalled()):
+                print("Motor bloqueado. Terminando")
+                audi.drive_power(0)
+                audi.steer(0)
+                return
+
             # Adquirir el estado actual del vehículo
-            #position_vehicle = 0.0
-            #steering_vehicle = 0.0
-            # TODO: Adquirir los valores reales
+            
             position_vehicle = 0.5 * (front.angle() + rear.angle()) * ANGLE_TO_CM
             steering_vehicle = hub.imu.heading()
             
@@ -126,30 +132,34 @@ if __name__ == "__main__":
     #testSteeringControl()
     #testEncoders()
     #testSteeringAndPositionControl(-45, 120, True, 1)
+    p1 = [0.0, 0.0, umath.radians(0.0)]  # Postura inicial
+    p2 = [120.0, 120.0, umath.radians(90.0)]  # Postura final
+    p3 = [60.0, 60.0, umath.radians(270.0)]
+    p4 = [0.0, 0.0, umath.radians(180.0)]
+    PATH = [p1, p2, p3, p4]
+    
+    for i in range(len(PATH) - 1):
+
+        init_pos = PATH[i]
+        final_pos = PATH[i + 1]
+        L, path_type = dubin_calculation(init_pos, final_pos, r_turn_min)
+        estimated_driving_time = sum(L) / v
+        infoTrayectoria(init_pos, final_pos, L, path_type, estimated_driving_time)
+        print("Iniciando control trayectoria")
+        controlDelVehiculo(L, path_type, estimated_driving_time)
+        wait(2000)
+    print("Control finalizado")
+
+    ''' ESTO FUNCIONA
     s = [0.0, 0.0, umath.radians(0.0)]  # Postura inicial
     g = [120.0, 120.0, umath.radians(90.0)]  # Postura final
     
     L, path_type = dubin_calculation(s, g, r_turn_min)
-
-
     estimated_driving_time = sum(L) / v
     infoTrayectoria(s, g, L, path_type, estimated_driving_time)
     print("Iniciando control trayectoria")
     controlDelVehiculo(L, path_type, estimated_driving_time)
-    #PATH = [(0.0, 0.0, 0.0), (0.0, 0.0, 90.0), (0.0, 0.0, 180.0), (0.0, 0.0, 270.0), (0.0, 0.0, 0.0)]
-    #PATH = [(0.0, 0.0, umath.radians(0.0)), (120.0, 0.0, umath.radians(0.0))]
-
     '''
-    for i in range(len(PATH) - 1):
-        L, path_type = dubin_calculation([PATH[i][0], PATH[i][1], umath.radians(PATH[i][2])], 
-                                         [PATH[i+1][0], PATH[i+1][1], umath.radians(PATH[i+1][2])], r_turn_min)
-        # Cómputo de la duración estimada de la trayectoria en función de la velocidad del vehículo. Se agrega un 20%
-        estimated_driving_time = sum(L) / v
-        infoTrayectoria(PATH[i], PATH[i+1], L, path_type, estimated_driving_time)
-        print("Iniciando control trayectoria {}".format(i+1))
-        controlDelVehiculo(L, path_type, estimated_driving_time, True)
-        wait(2000)
-    ''' 
     # Asegúrate de limpiar recursos aquí si es necesario
     print("Finalizando el programa correctamente.")
     hub.light.on(Color.GREEN)
