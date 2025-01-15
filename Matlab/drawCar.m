@@ -1,6 +1,6 @@
 function drawCar(x, y, theta, L_car, phi)
 %% Fuente: https://jckantor.github.io/CBE30338/07.06-Path-Planning-for-a-Simple-Car.html    
-scl = 1;      % Escala
+scl = 0.8;      % Escala
 %phi = 0; 
 w = 8;  % Distancia de la rueda al centro del vehículo
 r = 4;  % Radio de la rueda

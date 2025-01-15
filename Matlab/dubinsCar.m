@@ -1,12 +1,7 @@
 %% DUBINS CAR
 close all; clear; clc
 disp('https://gieseanw.wordpress.com/wp-content/uploads/2012/10/dubins.pdf')
-%% Constantes del vehículo
-L_car = 24; %[cm] Distancia entre ejes
-psi_max = deg2rad(20); %[rad] Máximo ángulo de giro de las ruedas delanteras.
-v = 39; %[cm/seg] Velocidad lineal constante del vehículo
 
-r_turn_min = L_car / sin(psi_max); %[cm] Mínimo radio de giro.
 
 %% La configuración de un vehículo se describe con la terna (x, y, theta)
 % Las ecuaciones de estado del modelo son:
@@ -33,62 +28,82 @@ r_turn_min = L_car / sin(psi_max); %[cm] Mínimo radio de giro.
 %% Esta función será útil para determinar el tiempo que debe estar el auto girando.
 % En el paper, llama L a la longitud del arco.
 
-%% Ejemplo de cálculo separando en funciones
-s = [0  0  0]; % Postura inicial
-g = [120 120 10]; % Postura final
-
+%% Constantes de configuración
 h = 0.020; % [seg] Paso de integración para simular las trayectorias
+run carConstants.m
+
+%% Creación de la figura para los gráficos
+figure('units','normalized','outerposition',[0 0 1 1]); 
+    hold on; grid on;
+    xlabel('x [cm]'); ylabel('y [cm]');
+    title(['Trayectorias de Dubins']);
+
 
 %% Procesamiento
-s(3) = deg2rad(s(3));
-g(3) = deg2rad(g(3));
-L = -1 * ones(6,3);
-type = cell(6, 1); % Inicializa el vector de tipos (celda de 6 elementos)
+PATH = [0 0 0; ...
+        0 0 90;...
+        0 0 180;...
+        0 0 270;...
+        0 0 0];
 
-% Cálculo de trayectorias
-[L(1,:), type{1}] = dubinRSR(s, g, r_turn_min);
-[L(2,:), type{2}] = dubinLSL(s, g, r_turn_min);
-[L(3,:), type{3}] = dubinLSR(s, g, r_turn_min);
-[L(4,:), type{4}] = dubinRSL(s, g, r_turn_min);
-[L(5,:), type{5}] = dubinRLR(s, g, r_turn_min);
-[L(6,:), type{6}] = dubinLRL(s, g, r_turn_min);
+PATH = [0 0 0; 120 120 90];
 
-% 
-% for i = 1:6
-%     if(L(i,1)~= -1)
-%         drawInitandEnd(s, g, type{i});
-%         drawDubinTrajectory(s, g, r_turn_min, type{i}, L(i,:), h, v)
-%     end
-% end
+for i = 1:length(PATH) - 1
+    init_point = PATH(i,:);
+    end_point = PATH(i+1,:);
 
-% Selección de trayectorias.
-best_cost = Inf;  % Inicializamos con un valor muy alto
-L_selected = [Inf Inf Inf];  % Inicializamos con valores muy grandes
-type_selected = '';  % Inicialización vacía para el tipo
+    init_point(3) = deg2rad(init_point(3));
+    end_point(3) = deg2rad(end_point(3));
+    
+    L = -1 * ones(6,3);
+    type = cell(6, 1); % Inicializa el vector de tipos (celda de 6 elementos)
 
-for i = 1:6
-    if all(L(i,:) ~= -1)  % Verificamos que L(i,:) contenga valores válidos
-        cost = sum(L(i,:));  % Calculamos el costo total de la trayectoria
-        if cost < best_cost  % Verificamos si es la mejor trayectoria hasta ahora
-            best_cost = cost;
-            L_selected = L(i,:);
-            type_selected = type{i};  % Accedemos al tipo correspondiente
+    % Cálculo de trayectorias
+    [L(1,:), type{1}] = dubinRSR(init_point, end_point, r_turn_min);
+    [L(2,:), type{2}] = dubinLSL(init_point, end_point, r_turn_min);
+    [L(3,:), type{3}] = dubinLSR(init_point, end_point, r_turn_min);
+    [L(4,:), type{4}] = dubinRSL(init_point, end_point, r_turn_min);
+    [L(5,:), type{5}] = dubinRLR(init_point, end_point, r_turn_min);
+    [L(6,:), type{6}] = dubinLRL(init_point, end_point, r_turn_min);
+
+    % 
+    % for i = 1:6
+    %     if(L(i,1)~= -1)
+    %         drawInitandEnd(s, g, type{i});
+    %         drawDubinTrajectory(s, g, r_turn_min, type{i}, L(i,:), h, v)
+    %     end
+    % end
+
+    % Selección de trayectorias.
+    best_cost = Inf;  % Inicializamos con un valor muy alto
+    L_selected = [Inf Inf Inf];  % Inicializamos con valores muy grandes
+    type_selected = '';  % Inicialización vacía para el tipo
+    
+    for i = 1:6
+        if all(L(i,:) ~= -1)  % Verificamos que L(i,:) contenga valores válidos
+            cost = sum(L(i,:));  % Calculamos el costo total de la trayectoria
+            if cost < best_cost  % Verificamos si es la mejor trayectoria hasta ahora
+                best_cost = cost;
+                L_selected = L(i,:);
+                type_selected = type{i};  % Accedemos al tipo correspondiente
+            end
         end
     end
+
+    % Cálculo de tiempos para cada tramo
+    times = L_selected / v; % Tiempo en segundos por tramo
+    
+    
+    % Mostrar resultados
+    disp(['Mejor costo: ', num2str(best_cost), ' cm']);
+    disp(['Trayectoria seleccionada: ', type_selected]);
+    disp(['Longitudes: ', num2str(L_selected)]);
+    disp(['Tiempos por tramo (ms): ', num2str(times * 1000)]);
+    disp(['Tiempo total (s): ', num2str(sum(times))]);
+    
+    %[headings, distances] = generateReferences(s, r_turn_min, type_selected, L_selected, h);
+    
+    drawInitandEnd(init_point, end_point, type_selected);
+    drawDubinTrajectory(init_point, end_point, r_turn_min, type_selected, L_selected, h, v, L_car, psi_max)
 end
-
-% Cálculo de tiempos para cada tramo
-times = L_selected / v; % Tiempo en segundos por tramo
-
-
-% Mostrar resultados
-disp(['Mejor costo: ', num2str(best_cost), ' cm']);
-disp(['Trayectoria seleccionada: ', type_selected]);
-disp(['Longitudes: ', num2str(L_selected)]);
-disp(['Tiempos por tramo (ms): ', num2str(times * 1000)]);
-disp(['Tiempo total (s): ', num2str(sum(times))]);
-
-%[headings, distances] = generateReferences(s, r_turn_min, type_selected, L_selected, h);
-
-drawInitandEnd(s, g, type_selected);
-drawDubinTrajectory(s, g, r_turn_min, type_selected, L_selected, h, v, L_car, psi_max)
+disp('Terminado')

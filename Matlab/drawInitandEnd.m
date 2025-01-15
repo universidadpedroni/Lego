@@ -1,11 +1,7 @@
 function drawInitandEnd(s, g, type)
     %% Función para dibujar el punto de inicio y fin
     % Dibuja la trayectoria Dubins en el espacio y simula el movimiento del vehículo.
-    figure('units','normalized','outerposition',[0 0 1 1]); 
-    hold on; grid on;
-    xlabel('x [cm]'); ylabel('y [cm]');
-    title(['Trayectoria de Dubins: ', type]);
-   
+       
     % Dibujar los puntos inicial y final
     plot(s(1), s(2), 'ro', 'LineWidth', 2);
     plot(g(1), g(2), 'ro', 'LineWidth', 2);
