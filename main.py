@@ -134,7 +134,7 @@ if __name__ == "__main__":
     #testSteeringAndPositionControl(-45, 120, True, 1)
     p1 = [0.0, 0.0, umath.radians(0.0)]  # Postura inicial
     p2 = [120.0, 120.0, umath.radians(90.0)]  # Postura final
-    p3 = [60.0, 60.0, umath.radians(270.0)]
+    p3 = [60.0, 60.0, umath.radians(180.0)]
     p4 = [0.0, 0.0, umath.radians(180.0)]
     PATH = [p1, p2, p3, p4]
     
@@ -146,20 +146,11 @@ if __name__ == "__main__":
         estimated_driving_time = sum(L) / v
         infoTrayectoria(init_pos, final_pos, L, path_type, estimated_driving_time)
         print("Iniciando control trayectoria")
-        controlDelVehiculo(L, path_type, estimated_driving_time)
+        controlDelVehiculo(L, path_type, estimated_driving_time, True)
         wait(2000)
     print("Control finalizado")
 
-    ''' ESTO FUNCIONA
-    s = [0.0, 0.0, umath.radians(0.0)]  # Postura inicial
-    g = [120.0, 120.0, umath.radians(90.0)]  # Postura final
     
-    L, path_type = dubin_calculation(s, g, r_turn_min)
-    estimated_driving_time = sum(L) / v
-    infoTrayectoria(s, g, L, path_type, estimated_driving_time)
-    print("Iniciando control trayectoria")
-    controlDelVehiculo(L, path_type, estimated_driving_time)
-    '''
     # Asegúrate de limpiar recursos aquí si es necesario
     print("Finalizando el programa correctamente.")
     hub.light.on(Color.GREEN)

@@ -30,7 +30,7 @@ x = s(1);
 y = s(2); 
 theta = s(3);
 
-time_pause = 0.05;
+time_pause = 0.001;
 delta_s = h * v; % Distancia recorrida por paso
 hold on; % Mantén el gráfico para dibujar iterativamente
 for i = 1:3 % Hay tres tramos
