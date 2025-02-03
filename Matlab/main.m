@@ -41,14 +41,13 @@ figure('units','normalized','outerposition',[0 0 1 1]);
 
 %% Procesamiento
 PATH = [0 0 0; ...
-        120 120 90;...
         60 60 180;...
-        120 0 270;...
+        -60 -60 180;...
+        60 -60 270;...
         0 0 180];
 
 
-
-for i = 1:length(PATH) - 1
+for i = 1:size(PATH,1) - 1
     init_point = PATH(i,:);
     end_point = PATH(i+1,:);
 
@@ -104,6 +103,6 @@ for i = 1:length(PATH) - 1
     %[headings, distances] = generateReferences(s, r_turn_min, type_selected, L_selected, h);
     
     drawInitandEnd(init_point, end_point, type_selected);
-    drawDubinTrajectory(init_point, end_point, r_turn_min, type_selected, L_selected, h, v, L_car, psi_max)
+    drawDubinTrajectory2(init_point, end_point, r_turn_min, type_selected, L_selected, h, v, L_car, psi_max)
 end
 disp('Terminado')

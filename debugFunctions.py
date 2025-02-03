@@ -31,11 +31,14 @@ def infoTrayectoria(s, g, L, path_type, estimated_driving_time):
     # Imprimir el mensaje
     print(mensaje)
 
-def infoControl(elapsed_time, position_reference, position_vehicle, position_error, steering_reference, steering_vehicle, steering_error):
+
+def infoControl(elapsed_time, position_reference, position_vehicle, position_error, position_command,
+                              steering_reference, steering_vehicle, steering_error, steering_command):
     mensaje = (
-        "Elapsed: {:.1f}s | PosRef: {:.2f}, PosVeh: {:.2f}, PosErr: {:.2f} | "
-        "SteerRef: {:.2f}, SteerVeh: {:.2f}, SteerErr: {:.2f}"
-    ).format(elapsed_time, position_reference, position_vehicle, position_error, umath.degrees(steering_reference), steering_vehicle, steering_error)
+        "E_Tim: {:.1f}s | P_Ref: {:.1f}, P_Veh: {:.1f}, P_Err: {:.1f}, P_Com: {:.0f}| "
+        "St_Ref: {:.1f}, St_Veh: {:.1f}, St_Err: {:.1f}, St_Com: {:.0f} "
+    ).format(elapsed_time, position_reference, position_vehicle, position_error, position_command,
+                           umath.degrees(steering_reference), steering_vehicle, steering_error, steering_command)
 
     print (mensaje)
         

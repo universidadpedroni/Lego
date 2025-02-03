@@ -1,5 +1,5 @@
 # controlConstants.py
 
 # Ganancias de control Proporcional
-KP_POSITION = 10
-KP_STEERING = 10
+KP_POSITION = 15
+KP_STEERING = 15
